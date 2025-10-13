@@ -1,11 +1,21 @@
 import re
 from playwright.sync_api import Page, expect
 
+preco = None
+
 def test_has_title(page: Page):
     page.goto("https://www.amazon.com.br/")
 
     # Expect a title "to contain" a substring.
     expect(page).to_have_title(re.compile("Amazon"))
+
+
+def obter_preco(texto_preco):
+    global preco 
+    preco = int(texto_preco.replace("R$", "").replace(".", "").replace(",", ""))
+    print(f"Preço do produto: R$ {preco/100:.2f}")
+    return preco  
+
 
 def test_search_and_get(page: Page):
     page.goto("https://www.amazon.com.br/")
@@ -22,23 +32,6 @@ def test_search_and_get(page: Page):
     preco = produto.locator("span.a-offscreen").first
     preco.wait_for(state="visible", timeout=5000)
     texto_preco = preco.inner_text()
-    print(texto_preco)
-    # element = page.locator('a[href*="B09FGCKBPK"]:has-text("Console PlayStation 5 - Digital Edition")')
-    # div.wait_for(state="visible", timeout=5000)
-    # print("HTML do link Playstation 5:", element.inner_html())
-
-    # element = page.get_by_role("link", name="Get started")
-    # element.wait_for(state="visible", timeout=5000)
-    # print("HTML do link Get started:", element.inner_html())
-
-    # # Click the get started link.
-    # element.click()
-
-    # # Expects page to have a heading with the name of Installation.
-    # expect(page.get_by_role("heading", name="Installation")).to_be_visible()
-    # title = page.get_by_role("heading", name="Installation")
-    # title.wait_for(state="visible", timeout=5000)
-    # print("HTML do título Installation:", title.inner_html())
-
-
-
+    print('\n' + texto_preco)
+    obter_preco(texto_preco)
+   
