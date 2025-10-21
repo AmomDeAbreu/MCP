@@ -115,3 +115,4 @@ def test_search_and_get(page: Page):
     # title.wait_for(state="visible", timeout=5000)
     # print("HTML do título Installation:", title.inner_html())
 ```
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/AmomDeAbreu/MCP)
