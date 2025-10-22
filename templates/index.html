@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Histórico de preços - PlayStation 5</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Pequenos ajustes */
+      #chart { min-height: 420px; }
+      pre { white-space: pre-wrap; }
+    </style>
+  </head>
+  <body class="bg-gray-50 text-gray-900">
+    <div class="max-w-5xl mx-auto p-6">
+      <header class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-semibold">Histórico de preços - PlayStation 5</h1>
+          <p class="text-sm text-gray-600">Visualize o histórico e atualize para buscar o preço atual.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="update" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded shadow">Atualizar</button>
+          <span id="status" class="text-sm text-gray-600"></span>
+        </div>
+      </header>
+
+      <main class="bg-white shadow rounded-lg p-6">
+        <div id="chart"></div>
+      </main>
+
+      <section class="mt-4">
+        <h2 class="text-lg font-medium mb-2">Saída do processo</h2>
+        <pre id="output" class="bg-gray-100 p-4 rounded text-sm text-gray-800"></pre>
+      </section>
+    </div>
+
+    <script>
+      async function fetchData() {
+        const res = await fetch('/data');
+        return await res.json();
+      }
+
+      function drawChart(items) {
+        if (!items.length) {
+          document.getElementById('chart').innerText = 'Nenhum dado disponível.';
+          return;
+        }
+        // items: {preco: number, data: 'dd-mm-YYYY'}
+        const dates = items.map(i => {
+          const parts = i.data.split('-'); // dd-mm-YYYY
+          return parts[0] + '/' + parts[1];
+        });
+        const prices = items.map(i => i.preco);
+        const texts = prices.map(p => 'R$ ' + p.toFixed(2));
+
+        const trace = {
+          x: dates,
+          y: prices,
+          mode: 'lines+markers+text',
+          text: texts,
+          textposition: 'top center',
+          marker: { size: 8 }
+        };
+
+        const layout = {
+          title: 'Histórico de preços - PlayStation 5 (' + items[items.length-1].data.split('-')[2] + ')',
+          xaxis: { title: 'Data (dd/mm)' },
+          yaxis: { title: 'Preço (R$)' },
+          margin: { t: 50, l: 60, r: 20, b: 60 }
+        };
+
+        window.currentData = items.slice();
+        Plotly.newPlot('chart', [trace], layout, {responsive: true});
+      }
+
+      async function doUpdate() {
+        const statusEl = document.getElementById('status');
+        statusEl.innerText = 'Atualizando...';
+        const res = await fetch('/update', { method: 'POST' });
+        const body = await res.json();
+        document.getElementById('output').innerText = body.stdout + '\n' + body.stderr;
+
+        // Busca dados atualizados
+        const dataResp = await fetchData();
+        const items = dataResp.data;
+
+        if (!window.currentData) {
+          drawChart(items);
+        } else if (items.length > window.currentData.length) {
+          const newItems = items.slice(window.currentData.length);
+          const xNew = newItems.map(i => i.data.split('-')[0] + '/' + i.data.split('-')[1]);
+          const yNew = newItems.map(i => i.preco);
+          Plotly.extendTraces('chart', { x: [xNew], y: [yNew] }, [0]);
+          const texts = items.map(i => 'R$ ' + i.preco.toFixed(2));
+          Plotly.restyle('chart', { text: [texts] }, [0]);
+          const ano = items[items.length-1].data.split('-')[2];
+          Plotly.relayout('chart', { title: 'Histórico de preços - PlayStation 5 (' + ano + ')' });
+          window.currentData = items.slice();
+        } else {
+          statusEl.innerText = 'Nenhuma atualização encontrada';
+          return;
+        }
+
+        document.getElementById('status').innerText = 'Atualizado';
+      }
+
+      document.getElementById('update').addEventListener('click', doUpdate);
+
+      // Inicializa
+      fetchData().then(d => drawChart(d.data));
+    </script>
+  </body>
+</html>
