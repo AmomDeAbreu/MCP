@@ -15,6 +15,9 @@ This project serves two primary functions:
 ```
 MCP/
 ├── main.py              # Core test automation logic
+├── app.py               # Aplication responsible to host a flesk server an support the localhost website
+├── graphic.py           # Code that convert all the data into a ploted graphic
+├── preco.json           # File that contains the main data used in the graphic
 ├── __pycache__/         # Python bytecode cache
 └── README.md            # Project documentation
 ```
